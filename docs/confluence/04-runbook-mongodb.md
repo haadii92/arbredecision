@@ -1,0 +1,144 @@
+# Runbooks techniques : MongoDB
+
+> À ajouter à l'onglet Runbooks techniques existant. Commandes à valider en recette avant tout usage en prod. Les noms d'hôtes, de replica set et de comptes sont des exemples.
+
+## A — Dump / restauration (MongoDB)
+
+**Prérequis**
+
+- MongoDB Database Tools (`mongodump`, `mongorestore`) dans une version compatible avec la source et la cible (voir la matrice de compatibilité des Database Tools).
+- Cible installée en version cible, en replica set (1 membre en recette, 3 en prod), authentification active.
+
+**Répétition et jour J**
+
+1. Arrêter les écritures applicatives.
+2. Dump streamé de l'instance entière vers la cible, sans fichier local :
+
+   ```bash
+   mongodump --uri "mongodb://dba@ancien-mongo01:27017/?authSource=admin&replicaSet=rs0" \
+     --oplog --archive --gzip \
+   | mongorestore --uri "mongodb://dba@nouveau-mongo01:27017/?authSource=admin&replicaSet=rs0" \
+     --oplogReplay --archive --gzip \
+     --numParallelCollections 4 --numInsertionWorkersPerCollection 4
+   ```
+
+   - `--oplog` / `--oplogReplay` : cohérence du dump d'un replica set. Uniquement sur l'instance entière (pas avec `--db`).
+   - Les comptes et rôles (base `admin`) sont inclus dans un dump de l'instance entière. Pour une seule base : `--dumpDbUsersAndRoles` / `--restoreDbUsersAndRoles`.
+   - Source standalone : retirer `--oplog` et `--oplogReplay`. Le dump n'est cohérent que si les écritures sont arrêtées.
+3. Contrôles (voir plus bas), puis bascule de l'enregistrement SRV.
+
+## F — Extension du replica set
+
+**Prérequis**
+
+- La version source (ou la majeure suivante) existe pour l'OS de la nouvelle VM.
+- Même keyFile (ou mêmes certificats x509) et même nom de replica set que la source.
+- Fenêtre de l'oplog supérieure à la durée estimée de l'initial sync :
+
+  ```javascript
+  rs.printReplicationInfo()   // "log length start to end"
+  ```
+
+  Au besoin, agrandir l'oplog : `db.adminCommand({ replSetResizeOplog: 1, size: <Mo> })`.
+- Plus de 7 membres votants au total : impossible. Les nouveaux membres entrent donc sans vote.
+
+**0. Source standalone : conversion en replica set (coupure courte)**
+
+```bash
+# mongod.conf : replication.replSetName: rs0, puis redémarrage
+```
+
+```javascript
+rs.initiate()
+```
+
+Les applis doivent ensuite se connecter avec `replicaSet=rs0` (ou par SRV).
+
+**1. Ajout des nouveaux membres** (sur le primaire actuel)
+
+```javascript
+rs.add({ host: "nouveau-mongo01:27017", priority: 0, votes: 0 })
+rs.add({ host: "nouveau-mongo02:27017", priority: 0, votes: 0 })
+rs.add({ host: "nouveau-mongo03:27017", priority: 0, votes: 0 })
+```
+
+Attendre que chaque membre passe à l'état `SECONDARY` et que son retard soit nul :
+
+```javascript
+rs.status().members.map(m => ({ name: m.name, state: m.stateStr, optime: m.optimeDate }))
+rs.printSecondaryReplicationInfo()
+```
+
+**2. Jour J : bascule du primaire**
+
+Donner vote et priorité aux nouveaux membres et retirer les votes des anciens, en gardant un nombre impair de votants :
+
+```javascript
+cfg = rs.conf()
+cfg.members.forEach(m => {
+  if (m.host.startsWith("nouveau-")) { m.priority = 2; m.votes = 1 }
+  else                                { m.priority = 0; m.votes = 0 }
+})
+rs.reconfig(cfg)
+```
+
+> Selon la version, `rs.reconfig` n'accepte qu'un changement de vote à la fois. Si la commande est refusée, procéder en plusieurs reconfigurations successives.
+
+Le primaire bascule vers un nouveau membre (sinon `rs.stepDown()` sur l'ancien primaire). Coupure : quelques secondes, les drivers se reconnectent seuls.
+
+**Retour arrière** tant que les anciens membres sont dans le replica set : reconfiguration inverse des priorités, puis `rs.stepDown()`.
+
+**3. Retrait des anciens membres** (après go)
+
+```javascript
+rs.remove("ancien-mongo01:27017")
+rs.remove("ancien-mongo02:27017")
+rs.remove("ancien-mongo03:27017")
+```
+
+Arrêter les anciens `mongod`, sans supprimer les VM (période de sécurité, MODOP042).
+
+**4. Montée de version, une majeure à la fois** (par exemple 6.0 → 7.0 → 8.0)
+
+Pour chaque majeure :
+
+1. Mettre à jour les binaires des secondaires, un par un, en attendant leur retour à `SECONDARY`.
+2. `rs.stepDown()` sur le primaire, puis mise à jour de ses binaires.
+3. Après validation, monter le niveau de fonctionnalités :
+
+   ```javascript
+   db.adminCommand({ setFeatureCompatibilityVersion: "7.0", confirm: true })
+   ```
+
+   (`confirm: true` exigé à partir de 7.0.) **Point de non-retour** : après cette commande, revenir en arrière demande une procédure de downgrade lourde.
+
+## Contrôles DBA (A et F)
+
+```javascript
+// Nombre de documents par collection, à comparer entre source et cible
+db.getMongo().getDBNames().filter(d => !["admin","config","local"].includes(d)).forEach(d => {
+  const x = db.getSiblingDB(d)
+  x.getCollectionNames().forEach(c => print(d + "." + c + " " + x[c].countDocuments({})))
+})
+
+// Index par collection
+db.getSiblingDB("<base>").getCollection("<collection>").getIndexes()
+
+// Intégrité d'une collection (lourd : en heures creuses)
+db.getSiblingDB("<base>").getCollection("<collection>").validate({ full: false })
+```
+
+## Enregistrement SRV
+
+À demander à l'ASR pour toute base MongoDB qui n'en a pas :
+
+```
+_mongodb._tcp.appli-mongo.domaine.local  SRV  0 0 27017 nouveau-mongo01.domaine.local.
+_mongodb._tcp.appli-mongo.domaine.local  SRV  0 0 27017 nouveau-mongo02.domaine.local.
+_mongodb._tcp.appli-mongo.domaine.local  SRV  0 0 27017 nouveau-mongo03.domaine.local.
+appli-mongo.domaine.local                TXT  "replicaSet=rs0&authSource=admin"
+```
+
+Chaîne de connexion de l'appli : `mongodb+srv://<compte>@appli-mongo.domaine.local/<base>`.
+
+> `mongodb+srv` active TLS par défaut. Sans TLS sur le replica set, ajouter `tls=false` dans la chaîne de connexion.

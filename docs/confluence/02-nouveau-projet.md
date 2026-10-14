@@ -1,0 +1,105 @@
+# Nouveau projet : choisir son moteur
+
+## L'essentiel
+
+- Si un **éditeur** impose un moteur, on suit sa matrice de compatibilité.
+- Sinon, le **modèle de données** décide : relationnel → **PostgreSQL par défaut**, **SQL Server** si l'appli dépend de l'écosystème Microsoft ; documents → **MongoDB**.
+- **MariaDB** n'est retenu que pour une appli conçue pour MySQL / MariaDB (progiciel, open source).
+- La **criticité** décide ensuite de l'architecture : standalone ou haute disponibilité.
+
+![Arbre de décision nouveau projet](img/arbre-nouveau-projet.png)
+
+## Étape 1 : le moteur
+
+| Situation | Moteur |
+|---|---|
+| Progiciel ou éditeur qui impose un moteur | Celui de l'éditeur, dans une version qu'il supporte et qui est au plus près de notre version cible |
+| Appli conçue pour MySQL / MariaDB (progiciel, outil open source) | MariaDB |
+| Données relationnelles, appli dépendante de l'écosystème Microsoft (SSIS, SSRS, SSAS, T-SQL spécifique, appli .NET déjà liée à SQL Server) | SQL Server |
+| Données relationnelles, sans contrainte particulière | PostgreSQL (par défaut) |
+| Le document JSON est le modèle principal : structure variable d'un enregistrement à l'autre, peu de jointures, lecture et écriture par document entier | MongoDB |
+
+### Repères pour trancher
+
+**Relationnel ou document ?**
+
+- Vous avez des relations entre entités, des contraintes d'intégrité, des transactions qui touchent plusieurs objets, du reporting en SQL : **relationnel**.
+- Vous avez seulement quelques champs JSON dans un modèle par ailleurs relationnel : **PostgreSQL** (type `jsonb`, indexable), pas MongoDB.
+- MongoDB sait faire des transactions multi-documents et des jointures (`$lookup`), mais elles coûtent cher. Si le modèle en a besoin partout, c'est un modèle relationnel.
+
+**PostgreSQL ou SQL Server ?**
+
+- PostgreSQL n'a pas de coût de licence. C'est le choix par défaut.
+- SQL Server se justifie par une dépendance réelle : outils BI Microsoft, éditeur, code T-SQL existant, compétences de l'équipe sur un projet existant. L'édition (Standard ou Enterprise) se décide avec le DBA, car elle détermine le coût de licence et la haute disponibilité possible.
+
+**Données particulières**
+
+- Géographique : PostgreSQL avec PostGIS.
+- Fichiers et binaires volumineux : sur un stockage fichier ou objet, avec seulement le chemin en base, quel que soit le moteur.
+- Données sensibles (RGPD, santé) : à signaler dès la demande. Le chiffrement et la gestion des accès en dépendent.
+
+## Étape 2 : l'architecture
+
+| Techno | Non critique | Critique |
+|---|---|---|
+| SQL Server | Standalone | Groupe de disponibilité (AG). Enterprise ; en Standard, AG de base limité à une base par AG |
+| PostgreSQL | Standalone | Cluster repmgr (primaire + standby) |
+| MariaDB | Standalone | Réplication primaire / réplica (standard à trancher) |
+| MongoDB | Replica set de 3 membres | Replica set de 3 membres, répartis sur des hôtes distincts |
+
+MongoDB est toujours installé en **replica set**, même en recette (1 membre). Les transactions et les change streams ne fonctionnent pas en standalone, et une future migration se fera par extension du replica set.
+
+## Avant la demande : les questions à se poser avec le DBA
+
+**Le besoin**
+
+- Quel type de données, et quelles relations entre elles ?
+- Un éditeur impose-t-il un moteur ou une version ? Joindre sa matrice de compatibilité.
+- Quel langage, quel ORM ou driver ?
+- Y a-t-il du reporting ou de la BI sur ces données ?
+
+**La volumétrie et la charge**
+
+- Volume au démarrage, puis à 3 ans ?
+- Nombre d'utilisateurs simultanés, pics de charge (batchs, clôtures) ?
+
+**La disponibilité**
+
+- Criticité de l'appli : est-elle dans la liste des applis critiques ?
+- Perte de données acceptable (RPO) et durée d'interruption acceptable (RTO) ?
+- Créneaux de maintenance possibles ?
+
+**La sécurité**
+
+- Données sensibles (personnelles, santé, financières) ?
+- Qui doit accéder aux données en dehors de l'appli (support, BI, exports) ?
+
+**Les environnements**
+
+- Quels environnements : dev, recette, prod ?
+- Date de mise en service visée ?
+
+## Déroulé
+
+1. La squad ouvre le ticket iTop avec les réponses ci-dessus.
+2. Le DBA valide le moteur, la version, l'édition et l'architecture, et les note dans le ticket.
+3. L'ASR fournit la VM et crée l'alias DNS.
+4. Le DBA installe le moteur, crée la base et les comptes applicatifs, et active Commvault et Zabbix.
+5. Le DBA transmet à la squad l'alias, le nom de la base et le compte applicatif (mot de passe par le coffre, pas par le ticket).
+6. La squad teste en recette, puis la prod est livrée sur le même modèle.
+
+## Qui
+
+| Qui | Fait quoi |
+|---|---|
+| Squad | Demande, cadrage du besoin, tests |
+| DBA | Choix du moteur et de l'architecture, installation, comptes, sauvegarde et supervision |
+| ASR | VM, alias DNS |
+
+## À trancher
+
+- PostgreSQL comme moteur relationnel par défaut (proposition).
+- Standard de haute disponibilité MariaDB : réplication primaire / réplica ou Galera.
+- Version et édition MongoDB cibles (Community ou Enterprise).
+- Versions cibles pour les nouveaux projets : PostgreSQL 17 / SQL Server 2022, ou les versions plus récentes disponibles (PostgreSQL 18, SQL Server 2025).
+- Liste des applis critiques.

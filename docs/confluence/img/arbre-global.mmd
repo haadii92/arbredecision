@@ -1,0 +1,8 @@
+flowchart LR
+  Q{Votre besoin ?} -->|Nouvelle base| N[Nouveau projet<br/>choisir son moteur]
+  Q -->|Base existante<br/>à déplacer| M[Migration<br/>choisir sa méthode]
+  N --> N1[Moteur :<br/>PostgreSQL, SQL Server,<br/>MariaDB ou MongoDB]
+  N1 --> N2[Architecture :<br/>standalone ou HA<br/>selon la criticité]
+  M --> M1[Méthode A à F<br/>selon taille, criticité<br/>et techno]
+  N2 --> T[Ticket iTop<br/>validation DBA]
+  M1 --> T

@@ -1,0 +1,16 @@
+flowchart LR
+  E{Un éditeur impose<br/>un moteur ?} -->|oui| ED[Moteur de l'éditeur<br/>version supportée]
+  E -->|non| MY{Appli conçue pour<br/>MySQL / MariaDB ?}
+  MY -->|oui| MA[MariaDB]
+  MY -->|non| MOD{Modèle de données ?}
+  MOD -->|Documents JSON,<br/>structure variable| MG[MongoDB<br/>replica set]
+  MOD -->|Relationnel| MS{Dépendance à l'écosystème<br/>Microsoft ?}
+  MS -->|oui| SQ[SQL Server]
+  MS -->|non| PG[PostgreSQL<br/>par défaut]
+  ED --> C{Appli critique ?}
+  MA --> C
+  MG --> C
+  SQ --> C
+  PG --> C
+  C -->|non| SA[Standalone<br/>sauf MongoDB :<br/>replica set 3 membres]
+  C -->|oui| HA[Haute disponibilité<br/>AG, repmgr, réplica,<br/>replica set]

@@ -1,0 +1,16 @@
+flowchart LR
+  G{Grosse base ou<br/>base critique ?} -->|non| A[A — Dump / restore<br/>toutes technos]
+  G -->|oui| T{Quelle techno ?}
+  T -->|SQL Server| S{En AG,<br/>Enterprise ?}
+  S -->|oui| C[C — AG distribué]
+  S -->|non| B[B — Log shipping]
+  T -->|PostgreSQL| P{PK partout,<br/>pas de large objects ?}
+  P -->|oui| D[D — Réplication logique]
+  P -->|PK manquantes| P2[Ajouter les PK<br/>puis D]
+  P -->|large objects| A2[A — Dump / restore]
+  T -->|MariaDB| M{Saut de version<br/>validé en recette ?}
+  M -->|oui| E[E — Réplication binlog]
+  M -->|non| A3[A — Dump / restore]
+  T -->|MongoDB| O{Shardé ?}
+  O -->|non| F[F — Extension<br/>du replica set]
+  O -->|oui| X[Cas DBA<br/>hors arbre]
