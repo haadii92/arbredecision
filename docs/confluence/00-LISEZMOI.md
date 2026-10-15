@@ -12,6 +12,25 @@ Choisir sa base de données              ← nouvelle page parente (01-choisir-s
 
 ## Mise en page dans Confluence
 
+### Option 1 : wiki markup (recommandé)
+
+Le dossier `wiki/` contient chaque page convertie en wiki markup Confluence.
+
+1. Créer la page avec le titre indiqué ci-dessous (le titre n'est pas dans le fichier).
+2. Joindre à la page le PNG correspondant de `img/` (*Joindre des fichiers*), avant de coller : le markup y fait référence par son nom.
+3. Dans l'éditeur : *Insérer > Balisage* (*Markup*), choisir **Confluence wiki**, coller le contenu du `.txt`, puis *Insérer*.
+
+| Fichier | Titre de la page | Image à joindre |
+|---|---|---|
+| `wiki/01-choisir-sa-base.txt` | Choisir sa base de données | `arbre-global.png` |
+| `wiki/02-nouveau-projet.txt` | Nouveau projet : choisir son moteur | `arbre-nouveau-projet.png` |
+| `wiki/03-migration.txt` | Migration : choisir sa méthode | `arbre-migration.png` |
+| `wiki/04-runbook-mongodb.txt` | À coller dans la page Runbooks techniques | — |
+
+Les liens entre pages pointent vers ces titres : ils fonctionnent si les pages portent exactement ces noms, dans le même espace.
+
+### Option 2 : Markdown
+
 - **Texte** : dans l'éditeur, `/markdown` (Cloud) ou *Insérer > Balisage > Markdown* (Data Center), puis coller le contenu du fichier `.md`. Les tableaux et les blocs de code sont convertis.
 - **Diagrammes** : insérer les PNG du dossier `img/` à la place des lignes `![…](img/…)`. Les sources `.mmd` (Mermaid) permettent de les modifier : avec une appli Mermaid pour Confluence, ou via mermaid.live, puis réexport en PNG.
 - **Liens entre pages** : remplacer les liens `xx-….md` par les liens Confluence une fois les pages créées.
