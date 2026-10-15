@@ -12,7 +12,14 @@ Choisir sa base de données              ← nouvelle page parente (01-choisir-s
 
 ## Mise en page dans Confluence
 
-### Option 1 : wiki markup (recommandé)
+### Option 0 : copier-coller depuis le navigateur (le plus simple sous Confluence Cloud)
+
+1. Dézipper l'archive, ouvrir `html/<page>.html` dans le navigateur (double-clic).
+2. Ctrl + A, Ctrl + C dans le navigateur.
+3. Ctrl + V dans le corps de la page Confluence : titres, tableaux, listes et blocs de code gardent leur mise en forme.
+4. Si le diagramme ne passe pas au collage : le supprimer et le réinsérer avec l'icône image de la barre d'outils (fichier dans `img/`).
+
+### Option 1 : wiki markup
 
 Le dossier `wiki/` contient chaque page convertie en wiki markup Confluence.
 

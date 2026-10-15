@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>03-migration</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+
+<h2 id="lessentiel">L'essentiel</h2>
+<p>Par défaut, on fait un dump / restauration. On ne met en place une
+synchronisation avant la bascule (log shipping, AG distribué,
+réplication logique, binlog ou extension de replica set) que pour les
+grosses bases ou les bases critiques. Cela vaut pour les standalone
+comme pour les clusters.</p>
+<p>Contexte : l'OS des serveurs BDD est obsolète (Windows d'un côté,
+Linux de l'autre). On ne met pas l'OS à jour en place : on monte une
+nouvelle VM, avec un moteur à jour (versions cibles sur la page <a
+href="01-choisir-sa-base.html">Choisir sa base de données</a>).</p>
+<p>Sources les plus anciennes du parc : PostgreSQL 10 et SQL Server
+2016. Toutes les méthodes s'appliquent à ces versions, avec les points
+d'attention notés pour chacune.</p>
+<h2 id="ce-que-ça-implique">Ce que ça implique</h2>
+<ul>
+<li>Le moteur change toujours de version : les copies de fichiers
+(réaffectation de disque, réplication physique PostgreSQL,
+<code>mariadb-backup</code>) sont exclues.</li>
+<li>Seule exception, MongoDB (méthode F) : les nouveaux membres
+démarrent dans la version source (ou la majeure suivante), puis montent
+jusqu'à la cible sur la nouvelle VM, une majeure à la fois.</li>
+<li>Retour arrière :
+<ul>
+<li><strong>D (PostgreSQL)</strong> : vrai retour arrière, par
+réplication inverse.</li>
+<li><strong>F (MongoDB)</strong> : retour arrière simple tant que les
+anciens membres sont dans le replica set.</li>
+<li><strong>Toutes les autres</strong> : la migration est à sens unique.
+Le retour arrière consiste à revenir sur l'ancien serveur, figé au
+moment de la bascule ; les écritures faites entre-temps sur le nouveau
+sont perdues.</li>
+</ul></li>
+<li>On ne supprime l'ancien serveur qu'après une période de
+sécurité.</li>
+</ul>
+<h2 id="choisir-sa-méthode">Choisir sa méthode</h2>
+<p><img src="../img/arbre-migration.png"
+alt="Arbre de décision migration" /></p>
+<p><strong>Grosse base</strong> : la copie complète, mesurée en recette,
+dépasse la moitié de la fenêtre de coupure. Le reste de la fenêtre sert
+aux contrôles, aux tests et au rollback éventuel.</p>
+<p><strong>Base critique</strong> : l'appli figure dans la liste des
+applis critiques. Tant que cette liste n'est pas arrêtée : coupure
+acceptable inférieure à 1 h, ou appli utilisée 24 h / 24 (proposition à
+valider).</p>
+<p>Filtre rapide avant la mesure (ordres de grandeur à confirmer sur nos
+disques) :</p>
+<table>
+<thead>
+<tr class="header">
+<th>Techno</th>
+<th>Dump par défaut jusqu'à</th>
+<th>Débit indicatif dump + restore</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SQL Server</td>
+<td>200 Go</td>
+<td>200 à 500 Mo/s</td>
+</tr>
+<tr class="even">
+<td>PostgreSQL</td>
+<td>200 Go</td>
+<td>50 à 150 Mo/s</td>
+</tr>
+<tr class="odd">
+<td>MariaDB</td>
+<td>50 Go, mesurer au-delà</td>
+<td>10 à 30 Mo/s (restauration mono-thread)</td>
+</tr>
+<tr class="even">
+<td>MongoDB</td>
+<td>50 Go, mesurer au-delà</td>
+<td>20 à 50 Mo/s, plus la reconstruction des index</td>
+</tr>
+</tbody>
+</table>
+<p>Estimation : durée (min) ≈ taille (Go) × 1024 ÷ débit (Mo/s) ÷ 60.
+Exemple : 200 Go à 100 Mo/s ≈ 34 min. Seule la mesure en recette fait
+foi.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Situation</th>
+<th>Méthode</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Petite base non critique, toutes technos, standalone ou cluster</td>
+<td>A — Dump / restauration</td>
+</tr>
+<tr class="even">
+<td>Grosse ou critique, SQL Server standalone, ou en AG sans
+Enterprise</td>
+<td>B — Log shipping</td>
+</tr>
+<tr class="odd">
+<td>Grosse ou critique, SQL Server en AG, Enterprise</td>
+<td>C — AG distribué</td>
+</tr>
+<tr class="even">
+<td>Grosse ou critique, PostgreSQL standalone ou repmgr</td>
+<td>D — Réplication logique</td>
+</tr>
+<tr class="odd">
+<td>Grosse ou critique, MariaDB, saut de version validé en recette</td>
+<td>E — Réplication binlog (sinon A)</td>
+</tr>
+<tr class="even">
+<td>Grosse ou critique, MongoDB en replica set ou standalone</td>
+<td>F — Extension du replica set</td>
+</tr>
+<tr class="odd">
+<td>MongoDB shardé</td>
+<td>Cas étudié par le DBA, hors arbre</td>
+</tr>
+</tbody>
+</table>
+<h2 id="les-6-méthodes-en-bref">Les 6 méthodes en bref</h2>
+<p>Les commandes pas à pas de chaque méthode sont dans l'onglet Runbooks
+techniques.</p>
+<h3 id="a--sauvegarde--restauration-toutes-technos">A — Sauvegarde /
+restauration (toutes technos)</h3>
+<p><strong>Quand</strong> : cas par défaut : petites bases et bases non
+critiques, en standalone comme en cluster.</p>
+<p><strong>Principe</strong> : on arrête les écritures, on sauvegarde,
+on restaure sur le nouveau serveur, on bascule.</p>
+<ul>
+<li><strong>SQL Server</strong> : full restaurée la veille
+<code>WITH NORECOVERY</code>, puis seulement les logs et le tail-log le
+jour J pour raccourcir la coupure.</li>
+<li><strong>PostgreSQL</strong> : <code>pg_dumpall --globals-only</code>
+puis <code>pg_dump</code> / <code>pg_restore</code> en parallèle, avec
+les binaires PG 17.</li>
+<li><strong>MariaDB</strong> : <code>mariadb-dump</code> streamé
+directement vers la cible, sans fichier local.</li>
+<li><strong>MongoDB</strong> : <code>mongodump --archive</code> streamé
+vers <code>mongorestore --archive</code> sur la cible, avec
+<code>--oplog</code> / <code>--oplogReplay</code> pour un replica set
+(dump cohérent de l'instance entière).</li>
+</ul>
+<p><strong>Attention</strong> : la durée se mesure lors d'une
+répétition, elle ne s'estime pas.</p>
+<h3 id="b--log-shipping-sql-server">B — Log shipping (SQL Server)</h3>
+<p><strong>Quand</strong> : grosse base ou base critique, source
+standalone, ou en AG sans pouvoir utiliser la méthode C.</p>
+<p><strong>Principe</strong> : la base est restaurée sur le nouveau
+serveur puis alimentée en continu par les sauvegardes de log. Le jour J
+: tail-log, dernière restauration, mise en ligne.</p>
+<p><strong>Attention</strong> : toute autre sauvegarde de log sur la
+source (Commvault, plan de maintenance) casse la chaîne. Vers 2022, la
+base cible reste illisible jusqu'à la bascule.</p>
+<h3 id="c--ag-distribué-sql-server-en-ag">C — AG distribué (SQL Server
+en AG)</h3>
+<p><strong>Quand</strong> : grosse base ou base critique, source en AG
+(2016 ou plus), édition Enterprise (à confirmer).</p>
+<p><strong>Principe</strong> : un nouvel AG sur le nouveau cluster
+Windows est relié à l'ancien et se synchronise seul. Le jour J, on
+bascule d'un AG à l'autre.</p>
+<p><strong>Attention</strong> : le listener change de nom, donc bascule
+par alias DNS. Méthode la plus lourde, réservée aux bases critiques.</p>
+<h3 id="d--réplication-logique-postgresql">D — Réplication logique
+(PostgreSQL)</h3>
+<p><strong>Quand</strong> : grosse base ou base critique, en standalone
+ou en cluster repmgr.</p>
+<p><strong>Principe</strong> : le nouveau serveur (ou le primaire du
+nouveau cluster repmgr) s'abonne aux tables de l'ancien et reste
+synchronisé. Le jour J : arrêt des écritures, recalage des séquences,
+bascule.</p>
+<p><strong>Attention</strong> :</p>
+<ul>
+<li>Ni les changements de schéma, ni les séquences, ni les large objects
+ne sont répliqués : gel des changements de schéma pendant la
+synchronisation.</li>
+<li>Source en PostgreSQL 10 : les <code>TRUNCATE</code> ne sont pas
+répliqués (ils le sont à partir de PG 11). Aucun <code>TRUNCATE</code>
+pendant la synchronisation : à vérifier avec la squad (batchs,
+purges).</li>
+<li>Chaque table a besoin d'une clé primaire. Sinon on en ajoute une, ou
+on passe la table en <code>REPLICA IDENTITY FULL</code> (acceptable pour
+les petites tables seulement).</li>
+<li>Des large objects (<code>pg_largeobject</code>) en volume : méthode
+A, sauf avis contraire du DBA.</li>
+<li>Le slot de réplication retient les WAL sur la source tant que
+l'abonné n'a pas suivi : surveiller l'espace disque de la source.</li>
+<li>Seule méthode qui permet un vrai retour arrière, par réplication
+inverse.</li>
+</ul>
+<h3 id="e--réplication-binlog-mariadb">E — Réplication binlog
+(MariaDB)</h3>
+<p><strong>Quand</strong> : grosse base ou base critique.</p>
+<p><strong>Principe</strong> : le nouveau serveur est chargé par un dump
+logique qui note la position GTID, monté en réplica de l'ancien, puis
+promu au moment de la bascule.</p>
+<p><strong>Attention</strong> :</p>
+<ul>
+<li>Un saut de plusieurs versions majeures (10.x vers 12.3) est à
+valider en recette ; sinon méthode A.</li>
+<li>La rétention des binlogs sur la source doit couvrir la durée du dump
+et du chargement.</li>
+<li>Les tables MyISAM empêchent un dump cohérent sans verrou : à
+convertir en InnoDB avant, ou à copier pendant la coupure.</li>
+<li>Désactiver les events sur la cible jusqu'à la bascule.</li>
+</ul>
+<h3 id="f--extension-du-replica-set-mongodb">F — Extension du replica
+set (MongoDB)</h3>
+<p><strong>Quand</strong> : grosse base ou base critique, en replica
+set. Une source standalone est d'abord convertie en replica set à 1
+membre (redémarrage court, à planifier).</p>
+<p><strong>Principe</strong> : les nouvelles VM sont ajoutées comme
+membres du replica set existant, dans la version source (ou la majeure
+suivante), et se synchronisent seules (initial sync). Le jour J, on
+donne la priorité aux nouveaux membres et le primaire bascule en
+quelques secondes. Les anciens membres sont ensuite retirés, puis la
+version monte sur les nouvelles VM, une majeure à la fois, jusqu'à la
+cible.</p>
+<p><strong>Attention</strong> :</p>
+<ul>
+<li>Vérifier que la version source existe pour l'OS de la nouvelle VM.
+Sinon : monter d'abord la version sur l'ancien serveur, ou méthode
+A.</li>
+<li>La fenêtre de l'oplog doit dépasser la durée de l'initial sync,
+sinon la synchronisation échoue.</li>
+<li>Les nouveaux membres sont ajoutés sans vote ni priorité tant qu'ils
+ne sont pas synchronisés.</li>
+<li>Les chaînes de connexion doivent passer par l'enregistrement SRV
+(<code>mongodb+srv://</code>) : une appli qui ne liste que les anciens
+hôtes perd la connexion à leur retrait.</li>
+<li>Retour arrière simple tant que les anciens membres sont dans le
+replica set. Après la montée du
+<code>featureCompatibilityVersion</code>, la migration est à sens
+unique.</li>
+</ul>
+<h2 id="avant-de-choisir--les-questions-à-se-poser-avec-le-dba">Avant de
+choisir : les questions à se poser avec le DBA</h2>
+<p><strong>Pour toutes les technos</strong></p>
+<ul>
+<li>Quelle coupure est acceptable le jour J, en minutes ?</li>
+<li>Combien de temps dure une copie complète de la base ? On le mesure
+lors d'une répétition.</li>
+<li>Comment les applis se connectent-elles : alias DNS, listener AG,
+enregistrement SRV, ou nom de serveur en dur ?</li>
+<li>Quels objets hors base faut-il recréer : comptes, droits, jobs
+planifiés, liens entre serveurs ?</li>
+</ul>
+<p><strong>Selon la techno</strong></p>
+<ul>
+<li><strong>SQL Server</strong> : la base est-elle en AG ? Quelle
+édition et quelle version source ?</li>
+<li><strong>PostgreSQL</strong> : version source (en PG 10, l'appli
+fait-elle des <code>TRUNCATE</code>) ? Tables sans clé primaire, large
+objects ?</li>
+<li><strong>MariaDB</strong> : version source ? Tables en MyISAM ?
+Rétention des binlogs ?</li>
+<li><strong>MongoDB</strong> : version source, et existe-t-elle sur l'OS
+cible ? Replica set, standalone ou shardé ? Fenêtre de l'oplog ?</li>
+</ul>
+<h2 id="jour-j--même-déroulé-pour-toutes-les-méthodes">Jour J : même
+déroulé pour toutes les méthodes</h2>
+<ol type="1">
+<li>Le CAB valide la méthode, la fenêtre et le critère de retour arrière
+avant toute copie de données.</li>
+<li>Comptes, droits et jobs déjà recréés sur le nouveau serveur.</li>
+<li>Arrêt des applis (ou source en lecture seule).</li>
+<li>Synchronisation finale selon la méthode.</li>
+<li>Contrôles DBA : nombre de lignes (de documents pour MongoDB),
+intégrité, index, statistiques recalculées.</li>
+<li>Bascule de l'alias DNS ou de l'enregistrement SRV (ou des chaînes de
+connexion si pas d'alias).</li>
+<li>Tests applicatifs par la squad, puis go / no-go avant l'heure
+limite.</li>
+<li>Sauvegarde Commvault et supervision Zabbix actives sur le nouveau
+serveur, retirées de l'ancien.</li>
+<li>Ancien serveur arrêté mais conservé, puis supprimé après la période
+de sécurité (MODOP042).</li>
+</ol>
+<table>
+<thead>
+<tr class="header">
+<th>Qui</th>
+<th>Fait quoi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Squad</td>
+<td>Demande, fenêtre de coupure, arrêt et tests des applis, go /
+no-go</td>
+</tr>
+<tr class="even">
+<td>DBA</td>
+<td>Choix de la méthode, installation du moteur, migration, contrôles
+techniques</td>
+</tr>
+<tr class="odd">
+<td>ASR</td>
+<td>Bascule de l'alias DNS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="règles-de-migration">Règles de migration</h2>
+<ul>
+<li><strong>Répétition obligatoire en recette</strong> pour toute base
+de prod : elle mesure la durée réelle de copie et tranche entre dump et
+synchronisation.</li>
+<li><strong>Alias DNS systématique</strong> : toute base qui n'en a pas
+en reçoit un pendant sa migration (un enregistrement SRV pour MongoDB).
+La prochaine migration se fera sans toucher aux applis.</li>
+<li><strong>dbatools pour SQL Server</strong> :
+<code>Copy-DbaLogin</code>, <code>Copy-DbaAgentJob</code> et
+<code>Copy-DbaDatabase</code> pour les logins avec leur SID, les jobs et
+la restauration.</li>
+<li><strong>Niveau de compatibilité SQL Server</strong> conservé à la
+bascule (130 pour une source 2016), Query Store activé, montée à 160
+après quelques semaines sans régression.</li>
+<li><strong>Suivi par base</strong> dans l'onglet Suivi des migrations :
+techno, méthode, durée mesurée, date de bascule, statut. Il sert aussi
+au planning par vagues.</li>
+</ul>
+<h2 id="à-reporter-dans-modop031">À reporter dans MODOP031</h2>
+<ul>
+<li>La migration et la vérification des bases sont réalisées par le DBA,
+pas par le responsable technique de la plateforme. L'échange passe par
+iTop, pas par email.</li>
+<li>Le CAB passe avant la copie des données, avec la méthode, la fenêtre
+et le critère de rollback.</li>
+<li>Ajout d'une étape de bascule explicite : arrêt des écritures,
+synchronisation finale, contrôles.</li>
+<li>Ajout du plan de rollback et d'une période de conservation de
+l'ancien serveur avant MODOP042.</li>
+<li>Ajout de la mise sous Commvault et Zabbix du nouveau serveur, et de
+leur retrait sur l'ancien.</li>
+<li>RACI : DBA réalisateur de la migration des bases, ASR réalisateur de
+la bascule d'alias.</li>
+<li>MongoDB entre dans le périmètre de la procédure.</li>
+</ul>
+<h2 id="à-trancher">À trancher</h2>
+<ul>
+<li>Version MariaDB cible (12.3 LTS proposée) et sa disponibilité sur le
+miroir interne.</li>
+<li>Version MongoDB cible (8.0 proposée), édition (Community ou
+Enterprise) et disponibilité sur le miroir interne.</li>
+<li>Présence de MongoDB shardé dans le parc.</li>
+<li>Liste des applis critiques, et critère provisoire en attendant.</li>
+<li>Éditions SQL Server du parc : Enterprise requise pour la méthode
+C.</li>
+<li>Débits indicatifs MongoDB à mesurer sur nos disques.</li>
+<li>Durée de conservation de l'ancien serveur avant suppression.</li>
+</ul>
+</body>
+</html>

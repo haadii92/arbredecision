@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>04-runbook-mongodb</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+
+<blockquote>
+<p>À ajouter à l'onglet Runbooks techniques existant. Commandes à
+valider en recette avant tout usage en prod. Les noms d'hôtes, de
+replica set et de comptes sont des exemples.</p>
+</blockquote>
+<h2 id="a--dump--restauration-mongodb">A — Dump / restauration
+(MongoDB)</h2>
+<p><strong>Prérequis</strong></p>
+<ul>
+<li>MongoDB Database Tools (<code>mongodump</code>,
+<code>mongorestore</code>) dans une version compatible avec la source et
+la cible (voir la matrice de compatibilité des Database Tools).</li>
+<li>Cible installée en version cible, en replica set (1 membre en
+recette, 3 en prod), authentification active.</li>
+</ul>
+<p><strong>Répétition et jour J</strong></p>
+<ol type="1">
+<li><p>Arrêter les écritures applicatives.</p></li>
+<li><p>Dump streamé de l'instance entière vers la cible, sans fichier
+local :</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">mongodump</span> <span class="at">--uri</span> <span class="st">&quot;mongodb://dba@ancien-mongo01:27017/?authSource=admin&amp;replicaSet=rs0&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--oplog</span> <span class="at">--archive</span> <span class="at">--gzip</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">|</span> <span class="ex">mongorestore</span> <span class="at">--uri</span> <span class="st">&quot;mongodb://dba@nouveau-mongo01:27017/?authSource=admin&amp;replicaSet=rs0&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--oplogReplay</span> <span class="at">--archive</span> <span class="at">--gzip</span> <span class="dt">\</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--numParallelCollections</span> 4 <span class="at">--numInsertionWorkersPerCollection</span> 4</span></code></pre></div>
+<ul>
+<li><code>--oplog</code> / <code>--oplogReplay</code> : cohérence du
+dump d'un replica set. Uniquement sur l'instance entière (pas avec
+<code>--db</code>).</li>
+<li>Les comptes et rôles (base <code>admin</code>) sont inclus dans un
+dump de l'instance entière. Pour une seule base :
+<code>--dumpDbUsersAndRoles</code> /
+<code>--restoreDbUsersAndRoles</code>.</li>
+<li>Source standalone : retirer <code>--oplog</code> et
+<code>--oplogReplay</code>. Le dump n'est cohérent que si les écritures
+sont arrêtées.</li>
+</ul></li>
+<li><p>Contrôles (voir plus bas), puis bascule de l'enregistrement
+SRV.</p></li>
+</ol>
+<h2 id="f--extension-du-replica-set">F — Extension du replica set</h2>
+<p><strong>Prérequis</strong></p>
+<ul>
+<li><p>La version source (ou la majeure suivante) existe pour l'OS de la
+nouvelle VM.</p></li>
+<li><p>Même keyFile (ou mêmes certificats x509) et même nom de replica
+set que la source.</p></li>
+<li><p>Fenêtre de l'oplog supérieure à la durée estimée de l'initial
+sync :</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">printReplicationInfo</span>()   <span class="co">// &quot;log length start to end&quot;</span></span></code></pre></div>
+<p>Au besoin, agrandir l'oplog :
+<code>db.adminCommand({ replSetResizeOplog: 1, size: &lt;Mo&gt; })</code>.</p></li>
+<li><p>Plus de 7 membres votants au total : impossible. Les nouveaux
+membres entrent donc sans vote.</p></li>
+</ul>
+<p><strong>0. Source standalone : conversion en replica set (coupure
+courte)</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># mongod.conf : replication.replSetName: rs0, puis redémarrage</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">initiate</span>()</span></code></pre></div>
+<p>Les applis doivent ensuite se connecter avec
+<code>replicaSet=rs0</code> (ou par SRV).</p>
+<p><strong>1. Ajout des nouveaux membres</strong> (sur le primaire
+actuel)</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">add</span>({ <span class="dt">host</span><span class="op">:</span> <span class="st">&quot;nouveau-mongo01:27017&quot;</span><span class="op">,</span> <span class="dt">priority</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">votes</span><span class="op">:</span> <span class="dv">0</span> })</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">add</span>({ <span class="dt">host</span><span class="op">:</span> <span class="st">&quot;nouveau-mongo02:27017&quot;</span><span class="op">,</span> <span class="dt">priority</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">votes</span><span class="op">:</span> <span class="dv">0</span> })</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">add</span>({ <span class="dt">host</span><span class="op">:</span> <span class="st">&quot;nouveau-mongo03:27017&quot;</span><span class="op">,</span> <span class="dt">priority</span><span class="op">:</span> <span class="dv">0</span><span class="op">,</span> <span class="dt">votes</span><span class="op">:</span> <span class="dv">0</span> })</span></code></pre></div>
+<p>Attendre que chaque membre passe à l'état <code>SECONDARY</code> et
+que son retard soit nul :</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">status</span>()<span class="op">.</span><span class="at">members</span><span class="op">.</span><span class="fu">map</span>(m <span class="kw">=&gt;</span> ({ <span class="dt">name</span><span class="op">:</span> m<span class="op">.</span><span class="at">name</span><span class="op">,</span> <span class="dt">state</span><span class="op">:</span> m<span class="op">.</span><span class="at">stateStr</span><span class="op">,</span> <span class="dt">optime</span><span class="op">:</span> m<span class="op">.</span><span class="at">optimeDate</span> }))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">printSecondaryReplicationInfo</span>()</span></code></pre></div>
+<p><strong>2. Jour J : bascule du primaire</strong></p>
+<p>Donner vote et priorité aux nouveaux membres et retirer les votes des
+anciens, en gardant un nombre impair de votants :</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>cfg <span class="op">=</span> rs<span class="op">.</span><span class="fu">conf</span>()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>cfg<span class="op">.</span><span class="at">members</span><span class="op">.</span><span class="fu">forEach</span>(m <span class="kw">=&gt;</span> {</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (m<span class="op">.</span><span class="at">host</span><span class="op">.</span><span class="fu">startsWith</span>(<span class="st">&quot;nouveau-&quot;</span>)) { m<span class="op">.</span><span class="at">priority</span> <span class="op">=</span> <span class="dv">2</span><span class="op">;</span> m<span class="op">.</span><span class="at">votes</span> <span class="op">=</span> <span class="dv">1</span> }</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span>                                { m<span class="op">.</span><span class="at">priority</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> m<span class="op">.</span><span class="at">votes</span> <span class="op">=</span> <span class="dv">0</span> }</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">reconfig</span>(cfg)</span></code></pre></div>
+<blockquote>
+<p>Selon la version, <code>rs.reconfig</code> n'accepte qu'un changement
+de vote à la fois. Si la commande est refusée, procéder en plusieurs
+reconfigurations successives.</p>
+</blockquote>
+<p>Le primaire bascule vers un nouveau membre (sinon
+<code>rs.stepDown()</code> sur l'ancien primaire). Coupure : quelques
+secondes, les drivers se reconnectent seuls.</p>
+<p><strong>Retour arrière</strong> tant que les anciens membres sont
+dans le replica set : reconfiguration inverse des priorités, puis
+<code>rs.stepDown()</code>.</p>
+<p><strong>3. Retrait des anciens membres</strong> (après go)</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">remove</span>(<span class="st">&quot;ancien-mongo01:27017&quot;</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">remove</span>(<span class="st">&quot;ancien-mongo02:27017&quot;</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>rs<span class="op">.</span><span class="fu">remove</span>(<span class="st">&quot;ancien-mongo03:27017&quot;</span>)</span></code></pre></div>
+<p>Arrêter les anciens <code>mongod</code>, sans supprimer les VM
+(période de sécurité, MODOP042).</p>
+<p><strong>4. Montée de version, une majeure à la fois</strong> (par
+exemple 6.0 → 7.0 → 8.0)</p>
+<p>Pour chaque majeure :</p>
+<ol type="1">
+<li><p>Mettre à jour les binaires des secondaires, un par un, en
+attendant leur retour à <code>SECONDARY</code>.</p></li>
+<li><p><code>rs.stepDown()</code> sur le primaire, puis mise à jour de
+ses binaires.</p></li>
+<li><p>Après validation, monter le niveau de fonctionnalités :</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>db<span class="op">.</span><span class="fu">adminCommand</span>({ <span class="dt">setFeatureCompatibilityVersion</span><span class="op">:</span> <span class="st">&quot;7.0&quot;</span><span class="op">,</span> <span class="dt">confirm</span><span class="op">:</span> <span class="kw">true</span> })</span></code></pre></div>
+<p>(<code>confirm: true</code> exigé à partir de 7.0.) <strong>Point de
+non-retour</strong> : après cette commande, revenir en arrière demande
+une procédure de downgrade lourde.</p></li>
+</ol>
+<h2 id="contrôles-dba-a-et-f">Contrôles DBA (A et F)</h2>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Nombre de documents par collection, à comparer entre source et cible</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>db<span class="op">.</span><span class="fu">getMongo</span>()<span class="op">.</span><span class="fu">getDBNames</span>()<span class="op">.</span><span class="fu">filter</span>(d <span class="kw">=&gt;</span> <span class="op">!</span>[<span class="st">&quot;admin&quot;</span><span class="op">,</span><span class="st">&quot;config&quot;</span><span class="op">,</span><span class="st">&quot;local&quot;</span>]<span class="op">.</span><span class="fu">includes</span>(d))<span class="op">.</span><span class="fu">forEach</span>(d <span class="kw">=&gt;</span> {</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> x <span class="op">=</span> db<span class="op">.</span><span class="fu">getSiblingDB</span>(d)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  x<span class="op">.</span><span class="fu">getCollectionNames</span>()<span class="op">.</span><span class="fu">forEach</span>(c <span class="kw">=&gt;</span> <span class="fu">print</span>(d <span class="op">+</span> <span class="st">&quot;.&quot;</span> <span class="op">+</span> c <span class="op">+</span> <span class="st">&quot; &quot;</span> <span class="op">+</span> x[c]<span class="op">.</span><span class="fu">countDocuments</span>({})))</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Index par collection</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>db<span class="op">.</span><span class="fu">getSiblingDB</span>(<span class="st">&quot;&lt;base&gt;&quot;</span>)<span class="op">.</span><span class="fu">getCollection</span>(<span class="st">&quot;&lt;collection&gt;&quot;</span>)<span class="op">.</span><span class="fu">getIndexes</span>()</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Intégrité d&#39;une collection (lourd : en heures creuses)</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>db<span class="op">.</span><span class="fu">getSiblingDB</span>(<span class="st">&quot;&lt;base&gt;&quot;</span>)<span class="op">.</span><span class="fu">getCollection</span>(<span class="st">&quot;&lt;collection&gt;&quot;</span>)<span class="op">.</span><span class="fu">validate</span>({ <span class="dt">full</span><span class="op">:</span> <span class="kw">false</span> })</span></code></pre></div>
+<h2 id="enregistrement-srv">Enregistrement SRV</h2>
+<p>À demander à l'ASR pour toute base MongoDB qui n'en a pas :</p>
+<pre><code>_mongodb._tcp.appli-mongo.domaine.local  SRV  0 0 27017 nouveau-mongo01.domaine.local.
+_mongodb._tcp.appli-mongo.domaine.local  SRV  0 0 27017 nouveau-mongo02.domaine.local.
+_mongodb._tcp.appli-mongo.domaine.local  SRV  0 0 27017 nouveau-mongo03.domaine.local.
+appli-mongo.domaine.local                TXT  &quot;replicaSet=rs0&amp;authSource=admin&quot;</code></pre>
+<p>Chaîne de connexion de l'appli :
+<code>mongodb+srv://&lt;compte&gt;@appli-mongo.domaine.local/&lt;base&gt;</code>.</p>
+<blockquote>
+<p><code>mongodb+srv</code> active TLS par défaut. Sans TLS sur le
+replica set, ajouter <code>tls=false</code> dans la chaîne de
+connexion.</p>
+</blockquote>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>02-nouveau-projet</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+
+<h2 id="lessentiel">L'essentiel</h2>
+<ul>
+<li>Si un <strong>éditeur</strong> impose un moteur, on suit sa matrice
+de compatibilité.</li>
+<li>Sinon, le <strong>modèle de données</strong> décide : relationnel →
+<strong>PostgreSQL par défaut</strong>, <strong>SQL Server</strong> si
+l'appli dépend de l'écosystème Microsoft ; documents →
+<strong>MongoDB</strong>.</li>
+<li><strong>MariaDB</strong> n'est retenu que pour une appli conçue pour
+MySQL / MariaDB (progiciel, open source).</li>
+<li>La <strong>criticité</strong> décide ensuite de l'architecture :
+standalone ou haute disponibilité.</li>
+</ul>
+<p><img src="../img/arbre-nouveau-projet.png"
+alt="Arbre de décision nouveau projet" /></p>
+<h2 id="étape-1--le-moteur">Étape 1 : le moteur</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Situation</th>
+<th>Moteur</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Progiciel ou éditeur qui impose un moteur</td>
+<td>Celui de l'éditeur, dans une version qu'il supporte et qui est au
+plus près de notre version cible</td>
+</tr>
+<tr class="even">
+<td>Appli conçue pour MySQL / MariaDB (progiciel, outil open
+source)</td>
+<td>MariaDB</td>
+</tr>
+<tr class="odd">
+<td>Données relationnelles, appli dépendante de l'écosystème Microsoft
+(SSIS, SSRS, SSAS, T-SQL spécifique, appli .NET déjà liée à SQL
+Server)</td>
+<td>SQL Server</td>
+</tr>
+<tr class="even">
+<td>Données relationnelles, sans contrainte particulière</td>
+<td>PostgreSQL (par défaut)</td>
+</tr>
+<tr class="odd">
+<td>Le document JSON est le modèle principal : structure variable d'un
+enregistrement à l'autre, peu de jointures, lecture et écriture par
+document entier</td>
+<td>MongoDB</td>
+</tr>
+</tbody>
+</table>
+<h3 id="repères-pour-trancher">Repères pour trancher</h3>
+<p><strong>Relationnel ou document ?</strong></p>
+<ul>
+<li>Vous avez des relations entre entités, des contraintes d'intégrité,
+des transactions qui touchent plusieurs objets, du reporting en SQL :
+<strong>relationnel</strong>.</li>
+<li>Vous avez seulement quelques champs JSON dans un modèle par ailleurs
+relationnel : <strong>PostgreSQL</strong> (type <code>jsonb</code>,
+indexable), pas MongoDB.</li>
+<li>MongoDB sait faire des transactions multi-documents et des jointures
+(<code>$lookup</code>), mais elles coûtent cher. Si le modèle en a
+besoin partout, c'est un modèle relationnel.</li>
+</ul>
+<p><strong>PostgreSQL ou SQL Server ?</strong></p>
+<ul>
+<li>PostgreSQL n'a pas de coût de licence. C'est le choix par
+défaut.</li>
+<li>SQL Server se justifie par une dépendance réelle : outils BI
+Microsoft, éditeur, code T-SQL existant, compétences de l'équipe sur un
+projet existant. L'édition (Standard ou Enterprise) se décide avec le
+DBA, car elle détermine le coût de licence et la haute disponibilité
+possible.</li>
+</ul>
+<p><strong>Données particulières</strong></p>
+<ul>
+<li>Géographique : PostgreSQL avec PostGIS.</li>
+<li>Fichiers et binaires volumineux : sur un stockage fichier ou objet,
+avec seulement le chemin en base, quel que soit le moteur.</li>
+<li>Données sensibles (RGPD, santé) : à signaler dès la demande. Le
+chiffrement et la gestion des accès en dépendent.</li>
+</ul>
+<h2 id="étape-2--larchitecture">Étape 2 : l'architecture</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Techno</th>
+<th>Non critique</th>
+<th>Critique</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>SQL Server</td>
+<td>Standalone</td>
+<td>Groupe de disponibilité (AG). Enterprise ; en Standard, AG de base
+limité à une base par AG</td>
+</tr>
+<tr class="even">
+<td>PostgreSQL</td>
+<td>Standalone</td>
+<td>Cluster repmgr (primaire + standby)</td>
+</tr>
+<tr class="odd">
+<td>MariaDB</td>
+<td>Standalone</td>
+<td>Réplication primaire / réplica (standard à trancher)</td>
+</tr>
+<tr class="even">
+<td>MongoDB</td>
+<td>Replica set de 3 membres</td>
+<td>Replica set de 3 membres, répartis sur des hôtes distincts</td>
+</tr>
+</tbody>
+</table>
+<p>MongoDB est toujours installé en <strong>replica set</strong>, même
+en recette (1 membre). Les transactions et les change streams ne
+fonctionnent pas en standalone, et une future migration se fera par
+extension du replica set.</p>
+<h2 id="avant-la-demande--les-questions-à-se-poser-avec-le-dba">Avant la
+demande : les questions à se poser avec le DBA</h2>
+<p><strong>Le besoin</strong></p>
+<ul>
+<li>Quel type de données, et quelles relations entre elles ?</li>
+<li>Un éditeur impose-t-il un moteur ou une version ? Joindre sa matrice
+de compatibilité.</li>
+<li>Quel langage, quel ORM ou driver ?</li>
+<li>Y a-t-il du reporting ou de la BI sur ces données ?</li>
+</ul>
+<p><strong>La volumétrie et la charge</strong></p>
+<ul>
+<li>Volume au démarrage, puis à 3 ans ?</li>
+<li>Nombre d'utilisateurs simultanés, pics de charge (batchs, clôtures)
+?</li>
+</ul>
+<p><strong>La disponibilité</strong></p>
+<ul>
+<li>Criticité de l'appli : est-elle dans la liste des applis critiques
+?</li>
+<li>Perte de données acceptable (RPO) et durée d'interruption acceptable
+(RTO) ?</li>
+<li>Créneaux de maintenance possibles ?</li>
+</ul>
+<p><strong>La sécurité</strong></p>
+<ul>
+<li>Données sensibles (personnelles, santé, financières) ?</li>
+<li>Qui doit accéder aux données en dehors de l'appli (support, BI,
+exports) ?</li>
+</ul>
+<p><strong>Les environnements</strong></p>
+<ul>
+<li>Quels environnements : dev, recette, prod ?</li>
+<li>Date de mise en service visée ?</li>
+</ul>
+<h2 id="déroulé">Déroulé</h2>
+<ol type="1">
+<li>La squad ouvre le ticket iTop avec les réponses ci-dessus.</li>
+<li>Le DBA valide le moteur, la version, l'édition et l'architecture, et
+les note dans le ticket.</li>
+<li>L'ASR fournit la VM et crée l'alias DNS.</li>
+<li>Le DBA installe le moteur, crée la base et les comptes applicatifs,
+et active Commvault et Zabbix.</li>
+<li>Le DBA transmet à la squad l'alias, le nom de la base et le compte
+applicatif (mot de passe par le coffre, pas par le ticket).</li>
+<li>La squad teste en recette, puis la prod est livrée sur le même
+modèle.</li>
+</ol>
+<h2 id="qui">Qui</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Qui</th>
+<th>Fait quoi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Squad</td>
+<td>Demande, cadrage du besoin, tests</td>
+</tr>
+<tr class="even">
+<td>DBA</td>
+<td>Choix du moteur et de l'architecture, installation, comptes,
+sauvegarde et supervision</td>
+</tr>
+<tr class="odd">
+<td>ASR</td>
+<td>VM, alias DNS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="à-trancher">À trancher</h2>
+<ul>
+<li>PostgreSQL comme moteur relationnel par défaut (proposition).</li>
+<li>Standard de haute disponibilité MariaDB : réplication primaire /
+réplica ou Galera.</li>
+<li>Version et édition MongoDB cibles (Community ou Enterprise).</li>
+<li>Versions cibles pour les nouveaux projets : PostgreSQL 17 / SQL
+Server 2022, ou les versions plus récentes disponibles (PostgreSQL 18,
+SQL Server 2025).</li>
+<li>Liste des applis critiques.</li>
+</ul>
+</body>
+</html>
