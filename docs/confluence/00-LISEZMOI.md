@@ -36,11 +36,13 @@ Le dossier `wiki/` contient chaque page convertie en wiki markup Confluence.
 
 Les liens entre pages pointent vers ces titres : ils fonctionnent si les pages portent exactement ces noms, dans le même espace.
 
-### Option 2 : Markdown
+### Option 2 : Markdown (validé sous Confluence Cloud)
 
-- **Texte** : dans l'éditeur, `/markdown` (Cloud) ou *Insérer > Balisage > Markdown* (Data Center), puis coller le contenu du fichier `.md`. Les tableaux et les blocs de code sont convertis.
-- **Diagrammes** : insérer les PNG du dossier `img/` à la place des lignes `![…](img/…)`. Les sources `.mmd` (Mermaid) permettent de les modifier : avec une appli Mermaid pour Confluence, ou via mermaid.live, puis réexport en PNG.
-- **Liens entre pages** : remplacer les liens `xx-….md` par les liens Confluence une fois les pages créées.
+1. Ouvrir le `.md` dans le **Bloc-notes**, pas dans VS Code : VS Code copie le texte en mode code, et Confluence le colle dans un bloc de code.
+2. Ctrl + A, Ctrl + C, puis Ctrl + V dans le corps de la page : Confluence convertit le Markdown.
+3. Supprimer le titre `#` de la première ligne : il doublonne le titre de la page.
+4. Remplacer chaque ligne `![…](img/…)` par l'image, avec l'icône image de la barre d'outils (fichier dans `img/`).
+5. Une fois toutes les pages créées, refaire les liens `xx-….md` : sélectionner le texte, Ctrl + K, chercher la page Confluence.
 
 ## Ce qui change par rapport à la doc actuelle
 
